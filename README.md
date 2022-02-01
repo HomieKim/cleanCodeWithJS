@@ -66,7 +66,130 @@
     - var 같은 경우는 runtime 이전에 선언부가 최상단으로 끌어올려짐 (undefined로 초기화, 런타임에 할당됨)
     - 함수 역시 호이스팅 되기 때문에 const로 함수를 선언하고 할당해주는 것을 권장 (함수 표현식)
 
+## 타입 다루기
 
+* **타입검사**
+    - typeof 연산자는 피연산자를 평가해서 문자열로 반환해 줍니다.
+    - 객체 타입의 경우 typeof 연산자로 다루기 애매함 (ex. 함수는 'function'타입, class도 'function'타입으로 나옴, class경우 생성자 함수로 인식)
+    - typeof null 은 'object'로 반환됨(언어적인 오류로 보는게 마땅)
+    - js는 동적 타입 언어이기 때문에 동적으로 변하는 타입을 전부 고려하기 어려움
+    - instanceof 연산자도 typeof 랑 비슷, 객체의 프로토타입 체인을 검사하는 것
+    ```js
+    const arr = [];
+    const func = function () {};
+    const date = new Date();
 
+    arr instanceof Array // true
+    func instanceof Function // true
+    date instanceof Date // true
+
+    arr instanceof Object // true
+    func instanceof Object // true
+    date instanceof Object // true
+    ```
+    - 타입 검사 시 prototype을 이용하는 방법도 있다.
+    ```js
+    const arr = [];
+    const func = function () {};
+    const date = new Date();
+
+    arr instanceof Array // true
+    func instanceof Function // true
+    date instanceof Date // true
+
+    arr instanceof Object // true
+    func instanceof Object // true
+    date instanceof Object // true
+
+    Object.prototype.toString.call(arr); // '[object Array]'
+    Object.prototype.toString.call(func); // '[object Function]'
+    Object.prototype.toString.call(date); // '[object Date]'
+    ```
+
+* **undefined & null**
+    - 의미적인 차이는 undefined 같은 경우는 무언가를 정의했지만 없는 상태고, null은 명시적으로 없다는 것을 보여주는 것
+    ```js
+    !null // true
+    !!null // false
+
+    null === false // false
+    !null === true // true
+    // null은 수학적으로 0을 명시합니다. , undefined는 NaN
+    // undefined는 아무것도 지정하지 않았을 때의 기본값
+    ```
+    - undefined :  선언했지만 값은 정의되지 않고 할당 x
+    - undefined, null -> 값이 없거나 정의 되지 않은 경우
+    - undefined 타입은 undefined, null의 타입은 object
+
+* **eqeq 줄이기**
+    - eq는 동등연산자를 말합니다(`==`)
+    - `===`는 엄격한 동등연산자, 일치연산자 라고 말합니다.
+    - 동등 연산자 사용 시 형변환이 일어 납니다.
+    - 동등연산자를 이용하는 경우는 에러위험이 있으므로 필요한 경우 수동으로 형변환하여 사용합니다.
+    ```js
+    const ticketNum = $('#ticketNum'); // 값이 0일 경우라고 가정
+    
+    // 좋지 않은 코드
+    if(ticketNum.value == 0) { ... }
+    // 형변환 하여 사용
+    if(Number(ticketNum.value) === 0) { ... }
+    // 혹은 dom에서 가져올 때 asNumber로 가져올 수 있음
+    if(ticketNum.valueAsNumber === 0) { ... }
+    ```
+
+* **형변환 주의하기**
+    - 참고 사이트 : 자바스크립트 type table (https://dorey.github.io/JavaScript-Equality-Table/)
+    ```js
+    // 암묵적
+    11 + ' 문자와 결합' // 11 문자와 결합
+
+    !!'문자열' // true
+    !!''     // false
+
+    // 명시적
+    parseInt('9.9999', 10); // 9
+    // 참고) parseInt()의 두번째 파라미터는 몇진수로 바꿀지 명시 가능
+    ```
+    - 코드의 가독성과 안전성을 위해 암묵적으로 이루어지는 형변환을 명시적으로 바꾸어 주는 것이 좋습니다.
+    ```js
+    // 예
+    String(11 + '문자열');
+    Boolean('문자열');
+    ```
+
+* **isNaN**
+    - js에서 숫자를 다루는 방법은 다양합니다. 숫자(`Number`)를 표현하는 방식은 부동소수점 방식을 사용합니다.
+    ```js
+    // 정수를 다루는 방법 이 따로 존재 예)
+    Number.MAX_SAFE_INTEGER // 가장 큰 정수값
+    Number.isInteger  // 정수인지 판별
+
+    // is Not A Number => 숫자가 아니다
+    ```
+    - Number타입을 검사할 때는 isNaN을 사용합니다.
+    - isNaN 경우 결과가 반대로 나오기 때문에 헷갈립니다.
+    ```js
+        isNaN(123) // false => 숫자가 아니다가 아니다 => 숫자가 맞다
+    ```
+    - isNaN의 경우 느슨한 검사를 수행하기 때문에 Number.isNaN으로 엄격한 검사를 하는 것을 권장 합니다.
+    ```js
+        isNaN(123+'테스트');  // true
+        Number.isNaN(123+'테스트') // false
+    ```
+    - isNaN의 경우 함수로 넘어오는 파라미터를 Number타입으로 형변환을 시도합니다.
+    - Number.isNaN은 주어진 값의 타입이 number이고 NaN일 때만 true를 반환 합니다.
+    ```js
+    // true 경우
+    Number.isNaN(NaN);
+    Number.isNaN(Number.NaN);
+    Number.isNaN(0 / 0);
+    // false 경우
+    Number.isNaN(true);
+    Number.isNaN(null);
+    Number.isNaN(123);
+    Number.isNaN("123");
+    Number.isNaN("12.3");
+    Number.isNaN("");
+    ```
 
 
